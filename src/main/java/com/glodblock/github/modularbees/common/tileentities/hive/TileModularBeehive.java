@@ -63,7 +63,7 @@ public class TileModularBeehive extends TileMBModularCore implements ItemHandler
     protected final MBBigItemInventory outputs = (MBBigItemInventory) new MBBigItemInventory(this, 18).outputOnly();
     protected final MBItemInventory upgrade = new MBItemInventory(this, 4, s -> ACCEPT_UPGRADES.contains(s.getItem())).setSlotLimit(1);
     protected final MBItemInventory bottle = new MBItemInventory(this, 2, MBItemInventory.ItemFilter.of(Items.GLASS_BOTTLE)).setIO(0, IO.IN).setIO(1, IO.OUT);
-    protected final MBFluidInventory honey = new MBFluidInventory(this, 8 * GameConstants.BUCKET).outputOnly();
+    protected MBFluidInventory honey = new MBFluidInventory(this, 8 * GameConstants.BUCKET).outputOnly();
     private final IItemHandler exposed = new CombinedInvWrapper(this.outputs, this.bottle);
     private final BeeTable table = new BeeTable(this, this::lookup);
     private float process = 0;
@@ -315,7 +315,11 @@ public class TileModularBeehive extends TileMBModularCore implements ItemHandler
         if (this.isFormed()) {
             this.onBeeChange();
             var stacker = this.getComponents(TileBeehiveStacker.class).size();
-            this.outputs.setMultiplier(stacker * MBConfig.STACKER_MULTIPLIER.get());
+            var stackerMultiplier = stacker * MBConfig.STACKER_MULTIPLIER.get();
+            this.outputs.setMultiplier(stackerMultiplier);
+            int honeyAmount = this.honey.getFluidAmount();
+            this.honey = new MBFluidInventory(this, stackerMultiplier * 8 * GameConstants.BUCKET).outputOnly();
+            this.honey.forceFill(new FluidStack(ModFluids.HONEY.get(), honeyAmount), IFluidHandler.FluidAction.EXECUTE);
         }
     }
 
