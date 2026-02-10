@@ -90,14 +90,19 @@ public class TileModularBeehive extends TileMBModularCore implements ItemHandler
                 return;
             }
             float overclock = 1;
-            if (!this.stuck) {
+            if (!this.stuck || this.process < (WAITING_TICKS - this.tickSpeed)) {
                 for (var component : components) {
+                    //If overclock is already at the limit and te surplus progress can't be buffered
+                    //break the loop to avoid using unneccessary output
+                    if (this.stuck && overclock > (WAITING_TICKS - this.process)/this.tickSpeed) {
+                        break;
+                    }
                     if (component instanceof TileBeehiveOverclocker overclocker) {
                         overclock += overclocker.getBoostAndConsume(this.table.getBeeCount());
                     }
                 }
                 overclock = Math.max(1, overclock);
-                this.addTick(overclock);
+                this.addTick(overclock, this.stuck);
             }
             if (!this.sending.isEmpty() && !this.stuck) {
                 for (int i = 0; i < this.sending.size(); ++i) {
@@ -118,7 +123,10 @@ public class TileModularBeehive extends TileMBModularCore implements ItemHandler
             }
             if (this.sending.isEmpty()) {
                 if (this.process >= WAITING_TICKS) {
-                    this.process = 0;
+                    //Protection in case we get enough progress for more than one execution
+                    //this way multiple executions are ran efficiently and prevent infinite process growth
+                    int outMultiplier = (int)(this.process / WAITING_TICKS);
+                    this.process -= WAITING_TICKS * outMultiplier;
                     var outputs = new StackCacheMap(world.getRandom());
                     this.table.collectOutput(world, outputs::add);
                     float treaterMultiplier = 1;
@@ -132,13 +140,13 @@ public class TileModularBeehive extends TileMBModularCore implements ItemHandler
                         }
                     }
                     treaterMultiplier = Math.max(1, treaterMultiplier);
-                    this.sending.addAll(outputs.getItems(this.blockMode, this.upgradeMultiplier * treaterMultiplier));
+                    this.sending.addAll(outputs.getItems(this.blockMode, this.upgradeMultiplier * treaterMultiplier * outMultiplier));
                     var honeyAmt = world.getRandom().nextInt(working / 2, working + 1) * MBConfig.HONEY_PRODUCE_BASE.get();
                     if (honeyAmt > 0) {
-                        this.honey.forceFill(new FluidStack(ModFluids.HONEY.get(), honeyAmt), IFluidHandler.FluidAction.EXECUTE);
+                        this.honey.forceFill(new FluidStack(ModFluids.HONEY.get(), (int)(honeyAmt * treaterMultiplier * outMultiplier)), IFluidHandler.FluidAction.EXECUTE);
                     }
                     if (dragonHive != null && this.table.getDragonBee() > 0) {
-                        dragonHive.addDragonBreath(this.table.getDragonBee(), world);
+                        dragonHive.addDragonBreath(this.table.getDragonBee(), world, treaterMultiplier * outMultiplier);
                     }
                     this.setChanged();
                 }
@@ -163,8 +171,12 @@ public class TileModularBeehive extends TileMBModularCore implements ItemHandler
         }
     }
 
-    public void addTick(float overclock) {
-        this.process += this.tickSpeed * overclock;
+    public void addTick(float overclock, boolean stuckLimiting) {
+        if (stuckLimiting){
+            this.process = Math.min(WAITING_TICKS - 1, this.process + this.tickSpeed * overclock);
+        } else {
+            this.process += this.tickSpeed * overclock;
+        }
     }
 
     public void onFeederChange(IItemHandler inv, int slot) {

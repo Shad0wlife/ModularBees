@@ -32,10 +32,10 @@ public class TileBeehiveDragon extends TileBeehivePart implements ItemHandlerHos
         super(GlodUtil.getTileType(TileBeehiveDragon.class, TileBeehiveDragon::new, MBSingletons.MODULAR_DRAGON_HIVE), pos, state);
     }
 
-    public void addDragonBreath(int bees, Level world) {
+    public void addDragonBreath(int bees, Level world, float multiplier) {
         var amount = world.random.nextInt(bees / 2, bees + 1) * MBConfig.DRAGON_BREATH_PRODUCE_BASE.get();
         if (amount > 0) {
-            this.tank.forceFill(new FluidStack(FluidDragonBreath.getFluid(), amount), IFluidHandler.FluidAction.EXECUTE);
+            this.tank.forceFill(new FluidStack(FluidDragonBreath.getFluid(), (int)(amount * multiplier)), IFluidHandler.FluidAction.EXECUTE);
         }
     }
 
