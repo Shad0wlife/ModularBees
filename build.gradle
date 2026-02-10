@@ -3,7 +3,7 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.neoforged.moddev' version '1.0.13'
+    id 'net.neoforged.moddev' version '2.0.140'
 }
 
 version = mod_version
@@ -62,8 +62,8 @@ sourceSets.main.resources {
 
 repositories {
     maven {
-        name 'cursemaven'
-        url "https://www.cursemaven.com"
+        name = 'cursemaven'
+        url = "https://www.cursemaven.com"
         content {
             includeGroup "curse.maven"
         }
@@ -80,7 +80,8 @@ repositories {
 }
 
 dependencies {
-    implementation "io.github.glodblock:Glodium:1.21-2.2-neoforge"
+    //implementation "io.github.glodblock:Glodium:1.21-2.2-neoforge"
+    implementation "curse.maven:glodium-957920:5821676"
     implementation "curse.maven:productivebees-377897:6698777"
     implementation files("libs/productivelib.jar")
     implementation "mezz.jei:jei-1.21.1-neoforge:19.21.0.247"
@@ -118,7 +119,7 @@ publishing {
     }
     repositories {
         maven {
-            url "file://${project.projectDir}/repo"
+            url = "file://${project.projectDir}/repo"
         }
     }
 }
